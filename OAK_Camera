@@ -6,11 +6,12 @@ from networktables import NetworkTables
 
 if __name__ == '__main__':
     # instantiating an object (rf) with the RoboflowOak module
-    rf = RoboflowOak(model="frc-orange-donut", confidence=0.05, overlap=0.5, version="6",
-    api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
+    rf = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
+    version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
     depth=True, device=None, blocking=True)
-    #
-    NetworkTables.initialize(server='2342.local')
+    # initalizes networktable from ip of geven server
+    # connects to networktabel 'SmartDashboard'
+    NetworkTables.initialize(server='10.10.21.43')
     cameraDataTable = NetworkTables.getTable('SmartDashboard')
     # Running our model and displaying the video output with detections
     while True:
@@ -35,14 +36,30 @@ if __name__ == '__main__':
         #frame - frame after preprocs, with predictions
         #raw_frame - original frame from your OAK
         #depth - depth map for raw_frame, center-rectified to the center camera
-
         # timing: for benchmarking purposes
         t = time.time()-t0
         print("INFERENCE TIME IN MS ", 1/t)
-        print("PREDICTIONS ", [p.json() for p in predictions])
-        cameraDataTable.putNumberArray('2342', [p.json() for p in predictions])
-        # setting parameters for depth calculation
-        max_depth = np.amax(depth)
+        # clear object return list
+        itemPredictionReturn = []
+        # loop through each object the camera detects
+        for p in predictions:
+             # start a list to contain all data from each object
+             itemPredictionList = []
+             # append information of indavidual object to list
+             for item in p.json():
+                 itemPredictionList.append(p.json()[item])
+             # only use object if confedence is high enough
+             if itemPredictionList[5] >= 0.2:
+                 # create string to contain all info of given object
+                 itemPredictionString = f"True, {itemPredictionList[0]}, {itemPredictionList[1]}, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
+                 # print data string to screen
+                 print(itemPredictionString)
+                 # add item to object return list
+                 itemPredictionReturn.append(itemPredictionString)
+        # send object list to networktable
+        cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
+	# setting parameters for depth calculation
+        # max_depth = np.amax(depth)
         #cv2.imshow("depth", depth/max_depth)
         # displaying the video feed as successive frames
         #cv2.imshow("frame", frame)
