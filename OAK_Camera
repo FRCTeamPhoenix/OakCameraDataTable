@@ -6,64 +6,46 @@ from networktables import NetworkTables
 
 if __name__ == '__main__':
     # instantiating an object (rf) with the RoboflowOak module
-    rf = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
+    rf_1 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
     version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
-    depth=True, device=None, blocking=True)
+    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-1")
+    rf_2 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
+    version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
+    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-2")
+    rf_3 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
+    version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
+    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-3")
+    cameraList = [rf_1, rf_2, rf_3]
     # initalizes networktable from ip of geven server
     # connects to networktabel 'SmartDashboard'
     NetworkTables.initialize(server='10.10.21.43')
     cameraDataTable = NetworkTables.getTable('SmartDashboard')
     # Running our model and displaying the video output with detections
+    itemPredictionReturn = []
+    cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
     while True:
-        t0 = time.time()
-        # The rf.detect() function runs the model inference
-        result, frame, raw_frame, depth = rf.detect()
-        #result, frame, raw_frame, depth = rf.detect(visualize=True)
-        predictions = result["predictions"]
-        #{
-        #    predictions:
-        #    [ {
-        #        x: (middle),x
-        #        y:(middle),
-        #        width:
-        #        height:
-        #        depth: ###->
-        #        confidence:
-        #        class:
-        #        mask: {
-        #    ]
-        #}
-        #frame - frame after preprocs, with predictions
-        #raw_frame - original frame from your OAK
-        #depth - depth map for raw_frame, center-rectified to the center camera
-        # timing: for benchmarking purposes
-        t = time.time()-t0
-        print("INFERENCE TIME IN MS ", 1/t)
-        # clear object return list
+        # clear detected notes
         itemPredictionReturn = []
-        # loop through each object the camera detects
-        for p in predictions:
-             # start a list to contain all data from each object
-             itemPredictionList = []
-             # append information of indavidual object to list
-             for item in p.json():
-                 itemPredictionList.append(p.json()[item])
-             # only use object if confedence is high enough
-             if itemPredictionList[5] >= 0.2:
-                 # create string to contain all info of given object
-                 itemPredictionString = f"True, {itemPredictionList[0]}, {itemPredictionList[1]}, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
-                 # print data string to screen
-                 print(itemPredictionString)
-                 # add item to object return list
-                 itemPredictionReturn.append(itemPredictionString)
+        for cameraNumber in range(len(cameraList)):
+            t0 = time.time()
+            # The rf.detect() function runs the model inference
+            result, frame, raw_frame, depth = cameraList[cameraNumber].detect()
+            predictions = result["predictions"]
+            t = time.time()-t0
+            print("INFERENCE TIME IN MS ", 1/t)
+            # loop through each object the camera detects
+            for p in predictions:
+                 # start a list to contain all data from each object
+                 itemPredictionList = []
+                 # append information of indavidual object to list
+                 for item in p.json():
+                     itemPredictionList.append(p.json()[item])
+                 # only use object if confedence is high enough
+                 if itemPredictionList[5] >= 0.4:
+                     # create string to contain all info of given object
+                     itemPredictionString = f"True, {itemPredictionList[0]}, {itemPredictionList[1]}, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
+                     # add item to object return list
+                     itemPredictionReturn.append(itemPredictionString)
+        print(itemPredictionReturn)
         # send object list to networktable
         cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
-	# setting parameters for depth calculation
-        # max_depth = np.amax(depth)
-        #cv2.imshow("depth", depth/max_depth)
-        # displaying the video feed as successive frames
-        #cv2.imshow("frame", frame)
-
-        # how to close the OAK inference window / stop inference: CTRL+q or CTRL+c
-        #if cv2.waitKey(1) == ord('q'):
-        #    break
