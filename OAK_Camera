@@ -8,19 +8,23 @@ if __name__ == '__main__':
     # instantiating an object (rf) with the RoboflowOak module
     rf_1 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
     version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
-    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-1")
+    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-1", advanced_config={"wide_fov":True})
     rf_2 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
     version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
     depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-2")
+    rf_3 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
+    version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
+    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-3")
     cameraList = [rf_1]
     # initalizes networktable from ip of geven server
     # connects to networktabel 'SmartDashboard'
-    NetworkTables.initialize(server='10.10.21.31')
+    NetworkTables.initialize(server='10.10.21.72')
     cameraDataTable = NetworkTables.getTable('SmartDashboard')
     # Running our model and displaying the video output with detections
     itemPredictionReturn = []
     cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
-    cameraAnglePixle = 95 / 4056
+    cameraAnglePixleH = 95 / 640
+    cameraAnglePixleV = 65 / 640
     while True:
         # clear detected notes
         itemPredictionReturn = []
@@ -38,15 +42,30 @@ if __name__ == '__main__':
                  # append information of indavidual object to list
                  for item in p.json():
                      itemPredictionList.append(p.json()[item])
-                 objectAngleX = cameraAnglePixle * itemPredictionList[0]
-                 objectAngleY = cameraAnglePixle * itemPredictionList[1]
-                 objectTrueX = (objectAngleX + 120(cameraNumber + 1)) % 360
+                 objectAngleX = -cameraAnglePixleH * (itemPredictionList[0] - 320)
+                 objectAngleY = -cameraAnglePixleV * (itemPredictionList[1] - 320)
+                 match cameraNumber:
+                     case 0:
+                         trueAngleX = (objectAngleX + 120) % 360
+                     case 1:
+                         trueAngleX = (objectAngleX + 260) % 360
+                     case 2:
+                         TrueAngleX = (objectAngleX + 360) % 360
                  # only use object if confedence is high enough
                  if itemPredictionList[5] >= 0.4:
                      # create string to contain all info of given object
-                     itemPredictionString = f"True, objectTrueX, objectAngleY, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
+                     itemPredictionString = f"{trueAngleX}, {objectAngleY}, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
                      # add item to object return list
                      itemPredictionReturn.append(itemPredictionString)
         print(itemPredictionReturn)
         # send object list to networktable
         cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
+        # setting parameters for depth calculation
+        #max_depth = np.amax(depth)
+        #cv2.imshow("depth", depth/max_depth)
+        # displaying the video feed as successive frames
+        cv2.imshow("frame", frame)
+
+        # how to close the OAK inference window / stop inference: CTRL+q or CTRL+c
+        if cv2.waitKey(1) == ord('q'):
+            break
