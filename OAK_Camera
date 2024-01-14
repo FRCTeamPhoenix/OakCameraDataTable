@@ -12,17 +12,15 @@ if __name__ == '__main__':
     rf_2 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
     version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
     depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-2")
-    rf_3 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
-    version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
-    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-3")
-    cameraList = [rf_1, rf_2, rf_3]
+    cameraList = [rf_1]
     # initalizes networktable from ip of geven server
     # connects to networktabel 'SmartDashboard'
-    NetworkTables.initialize(server='10.10.21.43')
+    NetworkTables.initialize(server='10.10.21.31')
     cameraDataTable = NetworkTables.getTable('SmartDashboard')
     # Running our model and displaying the video output with detections
     itemPredictionReturn = []
     cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
+    cameraAnglePixle = 95 / 4056
     while True:
         # clear detected notes
         itemPredictionReturn = []
@@ -40,10 +38,13 @@ if __name__ == '__main__':
                  # append information of indavidual object to list
                  for item in p.json():
                      itemPredictionList.append(p.json()[item])
+                 objectAngleX = cameraAnglePixle * itemPredictionList[0]
+                 objectAngleY = cameraAnglePixle * itemPredictionList[1]
+                 objectTrueX = (objectAngleX + 120(cameraNumber + 1)) % 360
                  # only use object if confedence is high enough
                  if itemPredictionList[5] >= 0.4:
                      # create string to contain all info of given object
-                     itemPredictionString = f"True, {itemPredictionList[0]}, {itemPredictionList[1]}, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
+                     itemPredictionString = f"True, objectTrueX, objectAngleY, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
                      # add item to object return list
                      itemPredictionReturn.append(itemPredictionString)
         print(itemPredictionReturn)
