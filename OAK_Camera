@@ -15,14 +15,16 @@ if __name__ == '__main__':
     rf_3 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
     version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
     depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-3")
+    # list of cameras to check
     cameraList = [rf_1]
     # initalizes networktable from ip of geven server
     # connects to networktabel 'SmartDashboard'
     NetworkTables.initialize(server='10.10.21.72')
     cameraDataTable = NetworkTables.getTable('SmartDashboard')
-    # Running our model and displaying the video output with detections
+    # clear datatables on startup
     itemPredictionReturn = []
     cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
+    #find angle per pixle values
     cameraAnglePixleH = 95 / 640
     cameraAnglePixleV = 65 / 640
     while True:
@@ -42,8 +44,10 @@ if __name__ == '__main__':
                  # append information of indavidual object to list
                  for item in p.json():
                      itemPredictionList.append(p.json()[item])
+                 # change (x,y) to angle values
                  objectAngleX = -cameraAnglePixleH * (itemPredictionList[0] - 320)
                  objectAngleY = -cameraAnglePixleV * (itemPredictionList[1] - 320)
+                 # change x angle to be relative to robot not camera
                  match cameraNumber:
                      case 0:
                          trueAngleX = (objectAngleX + 120) % 360
@@ -54,6 +58,13 @@ if __name__ == '__main__':
                  # only use object if confedence is high enough
                  if itemPredictionList[5] >= 0.4:
                      # create string to contain all info of given object
+                     """
+                     x angle relative to robot
+                     y angle relative to camera
+                     object area
+                     object distance
+                     object type
+                     """
                      itemPredictionString = f"{trueAngleX}, {objectAngleY}, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
                      # add item to object return list
                      itemPredictionReturn.append(itemPredictionString)
