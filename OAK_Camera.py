@@ -5,26 +5,26 @@ import numpy as np
 from networktables import NetworkTables 
 
 if __name__ == '__main__':
-    # initialize camera objects with the RoboflowOak module
+    # instantiating an object (rf) with the RoboflowOak module
     rf_1 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
     version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
-    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-1", advanced_config={"wide_fov":True})
+    depth=True, device="19443010E15EA12E00", blocking=True, device_name="OAK-D-PRO-W-1", advanced_config={"wide_fov":True})
     rf_2 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
     version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
-    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-2")
+    depth=True, device="19443010F157992E00", blocking=True, device_name="OAK-D-PRO-W-2")
     rf_3 = RoboflowOak(model="waoidjawiudjoiwaj", confidence=0.05, overlap=0.5,
     version="1", api_key="kifPJfNGf7lywgAW2kzA", rgb=True,
-    depth=True, device=None, blocking=True, device_name="OAK-D-PRO-W-3")
+    depth=True, device="1944301081ACA12E00", blocking=True, device_name="OAK-D-PRO-W-3")
     # list of cameras to check
     cameraList = [rf_1, rf_2, rf_3]
     # initalizes networktable from ip of geven server
     # connects to networktabel 'SmartDashboard'
-    NetworkTables.initialize(server='10.10.21.72')
-    cameraDataTable = NetworkTables.getTable('oakDCameraData')
-    # clear datatables on startup
+    NetworkTables.initialize(server='10.10.21.9')
+    cameraDataTable = NetworkTables.getTable('oakCamera')
+    # clears old data from networktables
     itemPredictionReturn = []
     cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
-    # find angle per pixle values
+    # calculates camera's angle/pixle vale
     cameraAnglePixleH = 95 / 640
     cameraAnglePixleV = 65 / 640
     while True:
@@ -44,41 +44,38 @@ if __name__ == '__main__':
                  # append information of indavidual object to list
                  for item in p.json():
                      itemPredictionList.append(p.json()[item])
-                 # change (x,y) to angle values
                  objectAngleX = -cameraAnglePixleH * (itemPredictionList[0] - 320)
                  objectAngleY = -cameraAnglePixleV * (itemPredictionList[1] - 320)
-                 # change x angle to be relative to robot not camera
+                 # converts from camera angle to robot angle
                  match cameraNumber:
                      case 0:
-                         trueAngleX = (objectAngleX + 0) % 360
+                         robotAngleX = (objectAngleX + 0) % 360
                      case 1:
-                         trueAngleX = (objectAngleX + 120) % 360
+                         robotAngleX = (objectAngleX + 120) % 360
                      case 2:
-                         TrueAngleX = (objectAngleX + 260) % 360
+                         robotAngleX = (objectAngleX + 260) % 360
                  # only use object if confedence is high enough
-                 if itemPredictionList[5] >= 0.4:
+                 if itemPredictionList[5] >= 0.72:
                      # create string to contain all info of given object
                      """
-                     x angle relative to robot
-                     y angle relative to camera
+                     object x angle relative to robot
+                     object y angle relative to camera 
                      object area
-                     object distance
+                     object distace
                      object type
                      """
-                     itemPredictionString = f"{trueAngleX}, {objectAngleY}, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
+                     itemPredictionString = f"{robotAngleX}, {objectAngleY}, {itemPredictionList[2] * itemPredictionList[3]}, {itemPredictionList[4]}, {itemPredictionList[6]}"
                      # add item to object return list
                      itemPredictionReturn.append(itemPredictionString)
         print(itemPredictionReturn)
         # send object list to networktable
         cameraDataTable.putStringArray("cameraItems", itemPredictionReturn)
-        
-        
         # setting parameters for depth calculation
         # max_depth = np.amax(depth)
         #cv2.imshow("depth", depth/max_depth)
         # displaying the video feed as successive frames
-        cv2.imshow("frame", frame)
+        #cv2.imshow("frame", frame)
 
         # how to close the OAK inference window / stop inference: CTRL+q or CTRL+c
-        if cv2.waitKey(1) == ord('q'):
-            break
+        #if cv2.waitKey(1) == ord('q'):
+        #    break
